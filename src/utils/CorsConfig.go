@@ -5,6 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 跨域请求设置
+
 var CorsConfig = cors.Config{
 	// 允许哪里传来的请求，生产环境可以直接替换为域名
 	AllowOrigins: []string{"http://localhost:5173"},
@@ -17,6 +19,8 @@ var CorsConfig = cors.Config{
 	// 预检请求（OPTIONS）的缓存时间（秒）。默认为5分钟
 	MaxAge: 60 * 5,
 }
+
+// 跨域请求接口
 
 func Cors() gin.HandlerFunc {
 	return cors.New(CorsConfig)

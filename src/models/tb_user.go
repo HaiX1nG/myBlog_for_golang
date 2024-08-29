@@ -78,12 +78,17 @@ func GetUserInfo(c *gin.Context) {
 	})
 }
 
+// TODO 用于处理登录的方法
+
 func LoginHandle(c *gin.Context) {
+	// 加载gorm对象连接数据库
 	db := driver.DB
 
+	// 获取表单数据
 	webUsername := c.PostForm("username")
 	webPassword := c.PostForm("password")
 
+	// 判断传来的数据是否为空
 	if len(webUsername) == 0 || len(webPassword) == 0 {
 		log.Println(webUsername, webPassword)
 		log.Println("The username and password cannot be empty!")
@@ -107,6 +112,7 @@ func LoginHandle(c *gin.Context) {
 			return
 		}
 
+		// 判断表单传来的username是否和数据库中的username一致
 		if webUsername != usernameAndPassword.Username {
 			log.Println(webUsername, webPassword)
 			log.Println(usernameAndPassword)
@@ -117,7 +123,7 @@ func LoginHandle(c *gin.Context) {
 			})
 			return
 		}
-
+		// 表单数据校验，如若密码不符合则返回报错
 		if webUsername == usernameAndPassword.Username && webPassword != usernameAndPassword.Password {
 			log.Println(webUsername, webPassword)
 			log.Println(usernameAndPassword)
@@ -129,6 +135,7 @@ func LoginHandle(c *gin.Context) {
 			return
 		}
 
+		// 如若验证通过则返回登录成功
 		if webUsername == usernameAndPassword.Username && webPassword == usernameAndPassword.Password {
 			log.Println(webUsername, webPassword)
 			log.Println(usernameAndPassword)
@@ -144,12 +151,15 @@ func LoginHandle(c *gin.Context) {
 	}
 }
 
-func RegisterHandle(c *gin.Context) {
+// TODO 用于处理注册的方法
 
+func RegisterHandle(c *gin.Context) {
+	// 生成雪花ID
 	nodeID := int64(1)
 	snowFlake := utils.NewSnowflake(nodeID)
 	uuid := snowFlake.Generate()
 
+	// 获取表单数据
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 	nickname := c.PostForm("nickname")
@@ -157,16 +167,20 @@ func RegisterHandle(c *gin.Context) {
 	email := c.PostForm("email")
 	gender := c.PostForm("gender")
 
+	// 初始化gorm对象连接数据库
 	db := driver.DB
 
+	// 接收是否存在相同的username
 	var exists int
 	querySelectUsername := `select count(*) from tb_user where username = ?`
 	err := db.Raw(querySelectUsername, username).Row().Scan(&exists)
 
+	// 如果出现错误断开gorm连接
 	if err != nil {
 		panic(err)
 	}
 
+	// 如果查询结果大于0则说明username重复，则返回结果
 	if exists > 0 {
 		fmt.Println("Username already exists.")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -176,11 +190,11 @@ func RegisterHandle(c *gin.Context) {
 	} else {
 		insertSQL := `insert into tb_user (uuid, username, password, nickname, phone_number, email, gender) values (?, ?, ?, ?, ?, ?, ?)`
 		result := db.Exec(insertSQL, uuid, username, password, nickname, phoneNumber, email, gender)
-
+		// 插入语句报错则返回报错结果
 		if result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"code":  500,
-				"error": "创建用户失败！",
+				"error": "User registration failed.",
 			})
 			return
 		}
